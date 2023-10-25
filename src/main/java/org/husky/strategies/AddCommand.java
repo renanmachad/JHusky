@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 
 import static org.husky.service.FileService.checkDirectoryExists;
@@ -21,15 +22,15 @@ public class AddCommand extends Commands {
     @Parameter(property = "command")
     private String command;
 
-    public void setCommand(String command){
+    public void setCommand(String command) {
         this.command = command;
     }
 
-    public void setHookPath(String hookPath){
+    public void setHookPath(String hookPath) {
         this.hookPath = hookPath;
     }
 
-    public AddCommand(){
+    public AddCommand() {
 
     }
 
@@ -44,27 +45,32 @@ public class AddCommand extends Commands {
 
 
     private void create(Path path, String command) throws IOException {
-        if (!Files.exists(path)) {
-            Files.createFile(path);
-        }
 
-        path.toFile().setExecutable(true);
-        Files.write(path, Collections.singletonList(defaultFileScript() + command));
-        System.out.println("Command " + command + " created successfully");
-        getLog().info("Command " + command + " created successfully");
+        // path already exists
+        if (Files.exists(path)) {
+            path.toFile().setExecutable(true);
+            Files.write(path, Collections.singletonList("\n" + command), StandardOpenOption.APPEND);
+        } else {
+
+            Files.createFile(path);
+            path.toFile().setExecutable(true);
+            Files.write(path, Collections.singletonList(defaultFileScript() + command));
+            getLog().info("Command " + command + " created successfully");
+        }
     }
 
 
     /**
+     * @return {String}
      * @description - TO run a git  hook is necessary use some commands ro run
-     *  -#!/bin/sh
+     * -#!/bin/sh
      * command {command inputed by user here}
      * to git hook works
-     * @return {String}
      */
-    private  String defaultFileScript(){
+    private String defaultFileScript() {
         return "#!/bin/sh \ncommand ";
     }
+
     @Override
     String getCommandName() {
         return "add";
